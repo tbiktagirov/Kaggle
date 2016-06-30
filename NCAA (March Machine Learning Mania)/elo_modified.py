@@ -1,5 +1,5 @@
-##This is a simple model based on the famous Elo rating.
-##I've implemented and trained it to predict the outcome of basketball games (NCAA).
+##This is a simple model based on the famous Elo rating adapted for basketball 
+##games prediction.
 
 import numpy as np
 import pandas as pd

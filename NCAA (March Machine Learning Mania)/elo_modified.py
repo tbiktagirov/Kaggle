@@ -9,10 +9,12 @@ import pandas as pd
 NEUTRAL = 0.0
 AWAY = -200.0
 HOME = 80.0
-#game importance
+#game importance for tournament/regular matches
 TOURNIMP = 1.0
 REGIMP = 0.15
+#game importance based on time passed from the game
 YEARIMP = 1988 #games are important starting from this year
+TAU = 2
 #probability evaluation
 PROBPAR = 300.0
 ##basic Elo
@@ -20,20 +22,20 @@ K = 15.0
 BETA = 230.0
 #modification of Elo to account for the point difference
 DELTA = 0.4
-TAU = 8
+GAMMA = 8
 #random seed
 RND = 190
 
 
 class Elorating():
    """This is a modification of Elo rating model which accounts for point difference."""
-   def __init__(self, k=K, beta=BETA, delta=DELTA, tau=TAU, win=1, lose=0):
+   def __init__(self, k=K, beta=BETA, delta=DELTA, gamma=GAMMA, win=1, lose=0):
       ##k-factor and beta are from the basic elo
       self.k = k
       self.beta = beta
 	  ###parameters for the modified version to account for point difference
       self.delta = delta
-      self.tau = tau
+      self.gamma = gamma
 	  ###victory and loss scores
       self.win = win
       self.lose = lose
@@ -44,7 +46,7 @@ class Elorating():
          pd = 1
       diff = float(other_rating) - float(rating) - loc
       f_factor = 2 * self.beta
-      return score + (-1) ** score * self.delta ** (1 + pd / self.tau) - 1. / (1 + 10 ** (diff / f_factor))
+      return score + (-1) ** score * self.delta ** (1 + pd / self.gamma) - 1. / (1 + 10 ** (diff / f_factor))
       #return score - 1. / (1 + 10 ** (diff / f_factor))
       #return (pd/25) * ( score - 1. / (1 + 10 ** (diff / f_factor)) )
 
@@ -139,14 +141,14 @@ def validate(test, preds):
    print('Logloss: ', logloss)
 
 
-def time_scale(tcr, minSeas):
+def time_scale(tcr, minSeas, tau):
    """Returns an importance value based on the time spent from the game"""
    i = 0
    num=tcr.shape[0]
    Imp_time = np.zeros((num,1))
    for index, row in tcr.iterrows():
       S = row['Season']
-      Imp_time[i] = row['Imp'] * (1 - np.exp(-(S-minSeas)/2))
+      Imp_time[i] = row['Imp'] * (1 - np.exp(-(S-minSeas)/tau))
       i += 1
    return Imp_time
 
@@ -158,7 +160,7 @@ if __name__ == "__main__":
    rscr = pd.read_csv('./input/RegularSeasonCompactResults.csv')
    rscr['Imp'] = REGIMP
    ##add time factor to game importance
-   Imp_time = time_scale(tcr, YEARIMP)
+   Imp_time = time_scale(tcr, YEARIMP, TAU)
    tcr.Imp = Imp_time
 
    ##Tournaments used for training and validation
